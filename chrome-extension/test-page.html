@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jukmane Extension Test Page</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f3f4f6; padding: 2rem; font-family: sans-serif; }
+        .jukmane-seat { transition: transform 0.2s; }
+        .jukmane-seat:hover { transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+    <div class="max-w-4xl mx-auto space-y-8">
+        <header>
+            <h1 class="text-3xl font-bold text-gray-800">Extension テストページ</h1>
+            <p class="text-gray-600">Chrome拡張機能の動作を確認するためのモックページです。</p>
+        </header>
+
+        <!-- Profile Section Mock -->
+        <section class="bg-white p-6 rounded-xl shadow-md">
+            <h2 class="text-xl font-bold mb-4 text-gray-700">生徒プロフィール画面 (.jukmane-student-header)</h2>
+            <div class="jukmane-student-header border-b pb-4 mb-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-2xl">👤</div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900" class="student-name">山田 太郎</h1>
+                        <p class="text-gray-500">中学3年生 / 英語・数学</p>
+                    </div>
+                </div>
+                <!-- Extension should inject panel here -->
+            </div>
+        </section>
+
+        <!-- Seating Chart Mock -->
+        <section class="bg-white p-6 rounded-xl shadow-md">
+            <h2 class="text-xl font-bold mb-4 text-gray-700">座席表 (.jukmane-seat)</h2>
+            <div class="grid grid-cols-4 gap-4">
+                <!-- Data attributes simulate student IDs -->
+                <div class="jukmane-seat bg-gray-100 h-32 rounded-lg p-4 flex flex-col items-center justify-center relative cursor-pointer border hover:border-blue-400" data-student-id="101">
+                    <span class="text-lg font-bold">A-1</span>
+                    <span class="text-sm text-gray-600">空席</span>
+                </div>
+                <div class="jukmane-seat bg-blue-100 h-32 rounded-lg p-4 flex flex-col items-center justify-center relative cursor-pointer border border-blue-200" data-student-id="102">
+                    <span class="text-lg font-bold">佐藤 花子</span>
+                    <span class="text-sm text-gray-600">中2 英数</span>
+                </div>
+                <div class="jukmane-seat bg-blue-100 h-32 rounded-lg p-4 flex flex-col items-center justify-center relative cursor-pointer border border-blue-200" data-student-id="103">
+                    <span class="text-lg font-bold">鈴木 一郎</span>
+                    <span class="text-sm text-gray-600">中3 数学</span>
+                </div>
+                <div class="jukmane-seat bg-blue-100 h-32 rounded-lg p-4 flex flex-col items-center justify-center relative cursor-pointer border border-blue-200" data-student-id="104">
+                    <span class="text-lg font-bold">田中 次郎</span>
+                    <span class="text-sm text-gray-600">高1 英語</span>
+                </div>
+            </div>
+            
+            <div class="mt-6">
+                <button id="add-seat-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow transition-colors">
+                    ＋ 動的に座席を追加 (DOM監視テスト)
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        document.getElementById('add-seat-btn').addEventListener('click', () => {
+            const grid = document.querySelector('.grid');
+            const newSeat = document.createElement('div');
+            const id = Math.floor(Math.random() * 1000);
+            newSeat.className = 'jukmane-seat bg-green-50 h-32 rounded-lg p-4 flex flex-col items-center justify-center relative cursor-pointer border border-green-200 animate-fade-in';
+            newSeat.setAttribute('data-student-id', id);
+            newSeat.innerHTML = `
+                <span class="text-lg font-bold">New Student</span>
+                <span class="text-sm text-gray-600">ID: ${id}</span>
+            `;
+            grid.appendChild(newSeat);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Campus {
+  id              Int            @id @default(autoincrement())
+  name            String
+  slug            String         @unique
+  passcode        String         @default("0000")
+  adminPassword   String?
+  notifyFrequency String         @default("EVERY_WEEK")
+  notifyDayOfWeek String         @default("MONDAY")
+  notifyTime      String         @default("12:00")
+  notifyTargets   String         @default("EVENTS,TESTS,ANNOUNCEMENTS")
+  lineAccessToken String?
+  lineChannelSecret String?
+  announcements   Announcement[]
+  events          Event[]
+  lecturers       Lecturer[]
+  lineGroups      LineGroup[]
+  schools         School[]
+  students        Student[]
+  testMasters     TestMaster[]
+  seatConfig      SeatConfig?
+}
+
+model LineGroup {
+  id        Int      @id @default(autoincrement())
+  groupId   String   @unique
+  campusId  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  campus    Campus   @relation(fields: [campusId], references: [id])
+
+  @@index([campusId])
+}
+
+model Lecturer {
+  id              Int      @id @default(autoincrement())
+  campusId        Int
+  lineUserId      String?  @unique
+  name            String
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  fabocKoushiId   String?              // faboc koushi_id (e.g. "15925")
+  seatPreferences String?              // JSON array "[5, 6, 7]" priority order
+  campus          Campus   @relation(fields: [campusId], references: [id])
+
+  @@unique([campusId, fabocKoushiId])
+  @@index([campusId])
+}
+
+model School {
+  id          Int          @id @default(autoincrement())
+  campusId    Int
+  name        String
+  testDates   String
+  campus      Campus       @relation(fields: [campusId], references: [id])
+  students    Student[]
+  testMasters TestMaster[]
+
+  @@index([campusId])
+}
+
+model Student {
+  id                  Int            @id @default(autoincrement())
+  campusId            Int
+  studentId           String
+  name                String
+  furigana            String
+  schoolId            Int
+  grade               String
+  description         String?
+  noteUpdatedAt       DateTime?      // Timestamp when description (shared note) was last updated
+  createdAt           DateTime?      @default(now())
+  updatedAt           DateTime       @default(now()) @updatedAt
+  isActive            Boolean        @default(true)
+  isHighlighted       Boolean        @default(false)  // Manual flag: marks student as "new enrollment" for seating chart highlight
+  isChurnRisk         Boolean        @default(false)  // Flag: marks student as "churn risk" for seating chart red border
+  churnRiskReason     String?                         // Reason for churn risk flag
+  graduatedAt         DateTime?
+  announcements       Announcement[]
+  events              Event[]
+  campus              Campus         @relation(fields: [campusId], references: [id])
+  school              School         @relation(fields: [schoolId], references: [id])
+  providedTestMasters TestMaster[]
+
+  @@unique([campusId, studentId])  // studentId is unique PER campus, not globally
+  @@index([campusId])
+  @@index([schoolId])
+}
+
+
+model TestMaster {
+  id              Int       @id @default(autoincrement())
+  campusId        Int
+  schoolId        Int
+  grade           String
+  year            Int
+  semester        String
+  subject         String
+  collectionType  String    @default("BOTH")
+  status          String    @default("PENDING")
+  collectedByName String?
+  collectedFromId Int?
+  collectedAt     DateTime?
+  campus          Campus    @relation(fields: [campusId], references: [id])
+  collectedFrom   Student?  @relation(fields: [collectedFromId], references: [id])
+  school          School    @relation(fields: [schoolId], references: [id])
+
+  @@index([campusId])
+  @@index([schoolId])
+  @@index([collectedFromId])
+  @@index([schoolId, grade, semester, year, subject])
+  @@index([status])
+}
+
+model Event {
+  id          Int       @id @default(autoincrement())
+  campusId    Int
+  studentId   Int?
+  title       String
+  date        DateTime
+  type        String
+  description String?
+  notifyStart DateTime?
+  notifyEnd   DateTime?
+  endDate     DateTime?
+  resolvedAt  DateTime?
+  campus      Campus    @relation(fields: [campusId], references: [id])
+  student     Student?  @relation(fields: [studentId], references: [id])
+
+  @@index([campusId])
+  @@index([studentId])
+}
+
+model Announcement {
+  id          Int       @id @default(autoincrement())
+  campusId    Int
+  studentId   Int?
+  title       String
+  detail      String
+  importance  String    @default("MEDIUM")
+  notifyStart DateTime?
+  notifyEnd   DateTime?
+  resolvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  campus      Campus    @relation(fields: [campusId], references: [id])
+  student     Student?  @relation(fields: [studentId], references: [id])
+
+  @@index([campusId])
+  @@index([studentId])
+}
+
+model BotSetting {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value String
+}
+
+model SeatConfig {
+  id             Int    @id @default(autoincrement())
+  campusId       Int    @unique
+  availableSeats String @default("[1,2,3,4,5,6,7,8,9,10,11,12,13]")
+  defaultOrder   String @default("[1,2,3,4,5,6,7,8,9,10,11,12,13]")
+  campus         Campus @relation(fields: [campusId], references: [id])
+}
